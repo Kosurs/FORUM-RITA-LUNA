@@ -1,0 +1,493 @@
+/* ########################################### */
+/*                 Global                      */
+/* ########################################### */
+*{
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 16px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(120deg, #e0e0e0 0%, #f5f5f5 100%);
+    color: #222;
+    min-height: 100vh;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+}
+
+a, .a2 {
+    color: #ddd01c;
+    font-weight: bold;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+a:hover, .a2:hover {
+    color: #e69044;
+    text-decoration: underline;
+}
+
+h1, h3 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin: 0.5em 0;
+}
+
+.auth-forms, .user-info {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(50,127,50,0.08);
+    padding: 2em;
+    margin: 2em auto;
+    max-width: 400px;
+    color: #222;
+}
+.auth-forms input, .auth-forms button {
+    width: 100%;
+    padding: 0.7em;
+    margin: 0.5em 0;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 1em;
+}
+.auth-forms button {
+    background: #327f32;
+    color: #fff;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.auth-forms button:hover {
+    background: #255e25;
+}
+.user-info button {
+    background: #e04a3f;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 0.5em 1em;
+    font-weight: bold;
+    cursor: pointer;
+    margin-right: 1em;
+    transition: background 0.2s;
+}
+.user-info button:hover {
+    background: #b32d1a;
+}
+.user-info a {
+    color: #327f32;
+    font-weight: bold;
+    text-decoration: none;
+    margin-left: 1em;
+}
+
+.caixa {
+    margin: 20px auto;
+    padding: 20px;
+    max-width: 1100px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(50,127,50,0.08);
+}
+
+.subforum {
+    margin-top: 20px;
+    border-radius: 10px;
+    background: #f7f7f7;
+    box-shadow: 0 1px 4px rgba(50,127,50,0.05);
+    padding-bottom: 1em;
+}
+
+.sf-titulo {
+    background: #327f32;
+    color: #f1ee15;
+    padding: 10px 20px;
+    border-radius: 10px 10px 0 0;
+    font-size: 1.2em;
+}
+
+.sf-linha {
+    display: grid;
+    grid-template-columns: 7% 60% 13% 20%;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+}
+
+.sf-coluna {
+    padding: 10px;
+    border-radius: 5px;
+    background: #e58939;
+    color: #fff;
+    font-size: 1em;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.sf-descricao * {
+    margin-block: 0;
+    
+}
+
+.center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.sf-icone i {
+    font-size: 2.5em;
+    color: #327f32;
+}
+
+.subforum-devider {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 0 10px;
+}
+
+/*   Header Section    */
+
+header {
+    font-weight: bold;
+    margin-inline: 10px;
+    color: #327f32;
+    background: #fff;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+  /* Nav Bar styles */
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1em;
+}
+.navigation {
+    background: #b77acc;
+    padding: 10px;
+    width: 65%;
+    display: inline-block;
+    border-radius: 5px;
+    max-height: 80px;
+    margin-right: 10px;
+}
+.close-icon i, .bar-icon {
+    font-size: 2.5em;
+    color: #327f32;
+    cursor: pointer;
+}
+
+.nav-list {
+    list-style-type: none;
+    overflow: hidden;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-item a {
+    display: inline-block;
+    text-align: center;
+    margin-inline: 20px;
+    font-size: 1.2em;
+    padding: 10px;
+    color: #fff;
+    border-radius: 5px;
+    transition: background 0.2s;
+}
+
+.nav-item a:hover {
+    background: #327f32;
+    color: #fff;
+}
+
+.hide {
+    display: none;
+}
+
+.brand {
+    font-size: 2.5em;
+    color: #b77acc;
+    font-family: aquire, 'Segoe UI', Arial, sans-serif;
+    letter-spacing: 2px;
+}
+
+.logo-img {
+    height: 60px;
+    margin-right: 16px;
+    vertical-align: middle;
+}
+
+
+/* Search Box styles */
+.search-box {
+    border: solid 1px #52057b;
+    margin-top: 20px;
+    padding: 30px;
+    display: flex;
+    justify-content: center;
+    background: #fafafa;
+    border-radius: 10px;
+    box-shadow: 1px 2px 3px #52057b22;
+}
+
+.search-box input, .search-box button {
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+    font-size: 1em;
+    margin-right: 10px;
+}
+
+.search-box button {
+    background: #327f32;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.search-box button:hover {
+    background: #255e25;
+    color: #fff;
+    box-shadow: 1px 2px 3px #fff;
+}
+
+
+/* forum info Styling */
+.forum-info {
+    padding: 20px;
+    background: #255e25;
+    color: #fff;
+    border-radius: 10px;
+    margin: 2em auto;
+    max-width: 1100px;
+    box-shadow: 0 2px 8px rgba(50,127,50,0.08);
+}
+
+.chart {
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-bottom: 0.5em;
+}
+/* Footer Styling */
+
+footer {
+    margin-top: 20px;
+    padding: 20px;
+    background: #327f32;
+    display: block;
+    text-align: center;
+    color: #fff;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 -2px 8px rgba(50,127,50,0.08);
+}
+
+/* ########################################### */
+/*            posts.html                       */
+/* ########################################### */
+
+/* posts table's head  */
+.table-head{
+    display: flex;
+}
+
+.table-head div{
+    padding: 5px;
+    margin: 2px;
+    background-color: #2C2C2C;
+    font-weight: bold;
+}
+
+.table-head .status{
+    flex: 5%;
+}
+
+.table-head .subjects{
+    flex: 70%;
+}
+
+.table-head .replies{
+    flex: 10%;
+}
+
+.table-head .last-reply{
+    flex: 15%;
+}
+
+/* posts table's body  */
+
+.table-row{
+    display: flex;
+}
+
+.table-row .status, .table-row .subjects, .table-row .replies, .table-row .last-reply{
+    padding: 5px;
+    margin: 2px;
+    background-color: #131415;
+}
+
+.table-row .status{
+    flex: 5%;
+    font-size: 30px;
+    text-align: center;
+}
+
+.table-row .subjects{
+    flex: 70%;
+}
+
+.table-row .replies{
+    flex: 10%;
+}
+
+.table-row .last-reply{
+    flex: 15%;
+}
+
+/* navigation path*/
+.navigate{
+    margin-block: 20px;
+    font-weight: lighter;
+    font-size: 24px;
+}
+
+.navigate a{
+    color: #fff;
+}
+
+.navigate a:hover{
+    color:#FF0042;
+    font-weight: bolder;
+}
+
+/* Pagination*/
+
+.pagination{
+    padding: 20px;
+    font-size: 15px;
+}
+
+.pagination a{
+    color: #fff;
+    margin-inline: 5px;
+    padding: 5px 10px;
+    border: solid 0.5px #fff;
+}
+
+.pagination a:hover{
+    opacity: 0.5;
+}
+
+.note{
+    background-color:#111314;
+    padding: 20px;
+    display: block;
+}
+
+.note span{
+    font-size: 20px;
+    margin-block: 5px;
+}
+
+
+/* ########################################### */
+/*            detail.html                      */
+/* ########################################### */
+
+.head{
+    display: flex;
+    background-color: #2C2C2C;
+    padding: 5px;
+    font-weight: bold;
+    font-size: 15px;
+}
+
+.authors{
+    flex: 20%;
+}
+
+.content{
+    flex: 80%;
+}
+
+.body{
+    display: flex;
+    background-color: #131415;
+    padding: 10px;
+    margin-top: 5px;
+}
+
+.body .authors .username{
+    font-size: 20px;
+}
+
+.body .authors img{
+    max-width: 50px;
+    max-height: 80px;
+}
+
+.body .content .comment button{
+    border:none;
+    padding:10px;
+    font-weight: bolder;
+    box-shadow: 4px 6px #fff;
+    cursor: pointer;
+    float: right;
+}
+
+/* comment section */
+.comment-area{
+    margin-bottom:50px;
+}
+
+.comment-area textarea{
+    width: 100%;
+    min-height: 100px;
+    padding: 10px;
+    margin-block: 10px;
+}
+
+.comment-area input{
+    float: right;
+    padding: 10px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.comment-area input:hover{
+    border: solid 1px #000000;
+}
+
+@media (max-width: 900px) {
+    .caixa, .forum-info {
+        max-width: 98vw;
+        padding: 10px;
+    }
+    .sf-linha {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    .sf-coluna {
+        margin-bottom: 10px;
+    }
+}
+
+@media (max-width: 600px) {
+    .brand {
+        font-size: 1.5em;
+    }
+    .auth-forms, .user-info {
+        padding: 1em;
+    }
+    .search-box {
+        flex-direction: column;
+        padding: 10px;
+    }
+    .search-box input, .search-box button {
+        width: 100%;
+        margin: 5px 0;
+    }
+}
