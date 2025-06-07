@@ -1,6 +1,17 @@
 <?php
 session_start();
-include 'db.php';
+require 'db.php';
+// Proteção global: se usuário logado estiver banido, redireciona para banido.php
+if (isset($_SESSION['user'])) {
+    $stmt = $conexao->prepare('SELECT is_banned FROM users WHERE username = ?');
+    $stmt->execute([$_SESSION['user']]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($user && $user['is_banned']) {
+        session_destroy();
+        header('Location: banido.php');
+        exit;
+    }
+}
 
 if (isset($_SESSION['user'])) {
     header('Location: index.php');
@@ -34,24 +45,33 @@ if (isset($_POST['login'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Fórum</title>
+    <title>Login</title>
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
-    <div style="text-align:center;margin:20px auto;">
-        <img src="https://i.ibb.co/d0F66Kw6/Whats-App-Image-2025-05-29-at-18-37-15-removebg-preview.png" alt="Logo" class="logo-img" style="height:80px;">
+    <header style="margin-top:20px">
+        <div class="center">
+            <div><img class="logo-site" src="https://i.ibb.co/d0F66Kw6/Whats-App-Image-2025-05-29-at-18-37-15-removebg-preview.png" alt="Logo"></div>
+            <div class="titulo-site">Fórum Rita Matos Luna</div>
+            <div><img class="logo-site" src="https://i.ibb.co/d0F66Kw6/Whats-App-Image-2025-05-29-at-18-37-15-removebg-preview.png" alt="Logo"></div>
+        </div>
+    </header>
+    <div class="caixa">
+        <p class="titulo-pagina center">Login</p>
+        <div class="caixa-form center-column">
+            <?php if (isset($error)) echo '<div class="mensagem-erro">'.htmlspecialchars($error).'</div>'; ?>
+            <form class="login-conteudo center-column" method="post">
+                <input class="login-texto" type="text" name="username" placeholder="Usuário. . ." required><br>
+                <input class="login-texto" type="password" name="password" placeholder="Senha. . ." required><br>
+                <input class="login-texto" type="password" name="admin_code" placeholder="Código administrativo. . . (opcional)"><br>
+                <button class="botao-verde" type="submit" name="login">Entrar</button>
+            </form>
+            <p>Não tem uma conta? <a href="register.php">Cadastre-se</a></p>
+            <a href="index.php">Voltar</a>
+        </div>
     </div>
-    <div class="auth-forms" style="max-width:400px;margin:20px auto;">
-        <h2>Login</h2>
-        <?php if (isset($error)) echo '<div style="color:red">'.htmlspecialchars($error).'</div>'; ?>
-        <form method="post">
-            <input type="text" name="username" placeholder="Usuário" required><br>
-            <input type="password" name="password" placeholder="Senha" required><br>
-            <input type="password" name="admin_code" placeholder="Código administrativo (opcional)"><br>
-            <button type="submit" name="login">Entrar</button>
-        </form>
-        <p>Não tem conta? <a href="register.php">Cadastre-se</a></p>
-        <a href="index.php">&larr; Voltar</a>
-    </div>
+    <footer>
+        <span>&copy; Saulo, Samuel Oliveira, Samuel Cavalcante | All Rights Reserved</span>
+    </footer>
 </body>
 </html>

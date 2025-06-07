@@ -1,7 +1,9 @@
 <?php
 // auth.php: Lógica de autenticação, cadastro e exclusão de conta
-session_start();
-include 'db.php';
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+require 'db.php';
 
 function redirect($url) {
     header('Location: ' . $url);

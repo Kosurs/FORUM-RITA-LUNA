@@ -1,6 +1,17 @@
 <?php
 session_start();
-include 'db.php';
+require 'db.php';
+// Proteção global: se usuário logado estiver banido, redireciona para banido.php
+if (isset($_SESSION['user'])) {
+    $stmt = $conexao->prepare('SELECT is_banned FROM users WHERE username = ?');
+    $stmt->execute([$_SESSION['user']]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($user && $user['is_banned']) {
+        session_destroy();
+        header('Location: banido.php');
+        exit;
+    }
+}
 
 // Redirecionamento global via SQL (tabela settings)
 $redirect_url = $redirect_admin = $redirect_time = null;
@@ -21,6 +32,12 @@ if ($redirect_url) {
         echo '<script>setTimeout(function(){window.location.href="'.addslashes($redirect_url).'";},3000);</script>';
         exit;
     }
+}
+
+if (isset($_GET['logout'])) {
+    session_destroy();
+    header('Location: index.php');
+    exit;
 }
 
 $forum_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -137,29 +154,6 @@ if (isset($_POST['delete_comment']) && $user_id) {
     exit;
 }
 
-// AJAX para criar comentário sem recarregar
-if (isset($_POST['ajax_create_comment']) && $user_id) {
-    $comment_content = trim($_POST['comment_content']);
-    $post_id = intval($_POST['post_id']);
-    if ($comment_content && $post_id) {
-        $stmtComment = $conexao->prepare('INSERT INTO comments (post_id, user_id, content) VALUES (?, ?, ?)');
-        $stmtComment->execute([$post_id, $user_id, $comment_content]);
-        $comment_id = $conexao->lastInsertId();
-        $stmt = $conexao->prepare('SELECT c.*, u.username FROM comments c JOIN users u ON c.user_id = u.id WHERE c.id = ?');
-        $stmt->execute([$comment_id]);
-        $comment = $stmt->fetch(PDO::FETCH_ASSOC);
-        header('Content-Type: text/html; charset=utf-8');
-        // Renderiza o HTML do novo comentário
-        echo '<div style="margin:8px 0; padding:8px; background:#eee; border-radius:5px; color:#222;">';
-        echo '<span style="font-weight:bold; color:#327f32;">'.htmlspecialchars($comment['username']).'</span>: ';
-        echo nl2br(htmlspecialchars($comment['content']));
-        echo '<span style="float:right; font-size:0.85em; color:#888;">em '.date('d/m/Y H:i', strtotime($comment['created_at'])).'</span>';
-        echo '<div style="clear:both;"></div></div>';
-        exit;
-    }
-    exit;
-}
-
 // Busca posts do fórum
 $stmt = $conexao->prepare('SELECT p.*, u.username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.forum_id = ? ORDER BY p.created_at DESC');
 $stmt->execute([$forum_id]);
@@ -183,207 +177,144 @@ if ($posts) {
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($forum['name']) ?> - Fórum</title>
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
     <header>
-        <div style="background:#fff;padding:1.2em 0 0.3em 0;text-align:center;">
-            <img src="https://i.ibb.co/d0F66Kw6/Whats-App-Image-2025-05-29-at-18-37-15-removebg-preview.png" alt="Logo" class="logo-img" style="height:48px;">
-            <div class="brand" style="color:#b77acc;font-size:1.3em;margin-top:0.2em;">Fórum Rita Matos Luna</div>
-            <?php if (!isset($_SESSION['user'])): ?>
-            <div style="margin-top:0.3em;">
-                <a href="register.php" style="display:inline-block;background:#327f32;color:#fff;font-weight:bold;margin:0 8px;padding:8px 22px;border-radius:6px;font-size:0.98em;box-shadow:0 2px 8px rgba(50,127,50,0.10);transition:background 0.2s;">Criar Conta</a>
-                <a href="login.php" style="display:inline-block;background:#b77acc;color:#fff;font-weight:bold;margin:0 8px;padding:8px 22px;border-radius:6px;font-size:0.98em;box-shadow:0 2px 8px rgba(183,122,204,0.10);transition:background 0.2s;">Login</a>
+        <nav>
+            <div class="nav-links">
+                <div class="nav-link"><a href="index.php">Início</a></div>
+                <div class="nav-link"><a href="index.php">Fóruns</a></div>
+                <?php if ($is_admin): ?>
+                <div class="nav-link"><a href="admin.php">Painel Admin</a></div>
+                <?php endif; ?>
+                <?php if (isset($_SESSION['user'])): ?>
+                <div class="nav-link"><a href="?logout=1">Sair</a></div>
+                <?php endif; ?>
             </div>
+        </nav>
+        <div class="nav-user">
+            <?php if (isset($_SESSION['user'])): ?>
+                <h1><?= htmlspecialchars($_SESSION['user']) ?></h1>
+            <?php else: ?>
+                <div class="nav-link"><a href="register.php">Cadastrar-se</a></div>
+                <div class="nav-link"><a href="login.php">Entrar</a></div>
             <?php endif; ?>
         </div>
-        <nav class="navbar" style="background:#fff;display:flex;align-items:center;justify-content:center;padding:0;margin:0;border-bottom:1px solid #eee;">
-            <ul class="nav-list" style="display:flex;align-items:center;gap:2em;margin:0;padding:0;list-style:none;">
-                <li class="nav-item"><a href="index.php" style="color:#222;font-weight:bold;letter-spacing:1px;padding:14px 0;display:inline-block;font-size:0.98em;">Início</a></li>
-                <li class="nav-item"><a href="forums.php" style="color:#222;font-weight:bold;letter-spacing:1px;padding:14px 0;display:inline-block;font-size:0.98em;">Fóruns</a></li>
-                <?php if (isset($_SESSION['user'])): ?>
-                    <?php
-                    $is_admin = false;
-                    if (isset($_SESSION['user'])) {
-                        include_once 'db.php';
-                        $stmt = $conexao->prepare('SELECT is_admin FROM users WHERE username = ?');
-                        $stmt->execute([$_SESSION['user']]);
-                        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-                        if ($row && $row['is_admin']) $is_admin = true;
-                    }
-                    ?>
-                    <li class="nav-item" style="color:#327f32;font-weight:bold;">
-                        <span style="background:#f7f7f7;padding:7px 18px;border-radius:6px;">👤 <?= htmlspecialchars($_SESSION['user']) ?></span>
-                    </li>
-                    <?php if ($is_admin): ?>
-                        <li class="nav-item"><a href="admin.php" style="color:#222;font-weight:bold;letter-spacing:1px;padding:14px 0;display:inline-block;font-size:0.98em;">Painel Admin</a></li>
-                    <?php endif; ?>
-                    <li class="nav-item"><a href="?logout=1" style="color:#b77acc;font-weight:bold;letter-spacing:1px;padding:14px 0;display:inline-block;font-size:0.98em;">Sair</a></li>
-                <?php endif; ?>
-            </ul>
-        </nav>
+        <div class="center">
+            <div><img class="logo-site" src="https://i.ibb.co/d0F66Kw6/Whats-App-Image-2025-05-29-at-18-37-15-removebg-preview.png" alt="Logo"></div>
+            <div class="titulo-site">Fórum Rita Matos Luna</div>
+            <div><img class="logo-site" src="https://i.ibb.co/d0F66Kw6/Whats-App-Image-2025-05-29-at-18-37-15-removebg-preview.png" alt="Logo"></div>
+        </div>
     </header>
     <div class="caixa">
-        <div style="display:flex;justify-content:flex-start;gap:18px;align-items:center;margin-bottom:2em;">
-            <a href="forums.php" title="Voltar para Fóruns" style="display:inline-flex;align-items:center;gap:8px;padding:10px 22px;background:#327f32;color:#fff;font-weight:bold;border-radius:8px;font-size:1.1em;text-decoration:none;box-shadow:0 2px 8px rgba(50,127,50,0.10);transition:background 0.2s;">
-                <img src="https://i.ibb.co/ZRKbDVzf/image-removebg-preview.png" alt="Voltar" style="height:1.5em;vertical-align:middle;">
-                Voltar para Fóruns
-            </a>
-        </div>
-        <h1><?= htmlspecialchars($forum['name']) ?></h1>
-        <p><?= htmlspecialchars($forum['description']) ?></p>
-        <hr>
+        <p class="titulo-pagina center"><?= htmlspecialchars($forum['name']) ?></p>
+        <p class="descricao-pagina center"><?= htmlspecialchars($forum['description']) ?></p>
         <?php if (isset($_GET['success'])) echo '<div style="color:green">'.htmlspecialchars($_GET['success']).'</div>'; ?>
         <?php if (isset($error)) echo '<div style="color:red">'.htmlspecialchars($error).'</div>'; ?>
         <?php if ($user_id): ?>
         <?php if ($forum['is_principal'] && !$is_admin): ?>
-            <div class="auth-forms" style="background:#ffe0e0;color:#b32d1a;">Você não é um administrador :(</div>
+            <div class="caixa-form center-column" style="background:#ffe0e0;color:#b32d1a;">Você não é um administrador :(</div>
         <?php else: ?>
-        <div class="auth-forms">
-            <h3>Criar novo post</h3>
-            <form method="post">
-                <input type="text" name="title" placeholder="Título do post" required><br>
-                <textarea name="content" placeholder="Conteúdo" required style="width:100%;min-height:80px;"></textarea><br>
-                <button type="submit" name="create_post">Publicar</button>
+        <div class="caixa-form center-column">
+            <h1>Criar novo post</h1>
+            <hr>
+            <form class="formulario" method="post">
+                <input class="formulario-nome" type="text" name="title" placeholder="Título do post. . ." required><br>
+                <textarea class="formulario-descricao" name="content" placeholder="Conteúdo. . ." required></textarea><br>
+                <button class="botao-verde" type="submit" name="create_post">Publicar</button>
             </form>
         </div>
         <?php endif; ?>
-        <?php else: ?>
-        <p><a href="index.php">Faça login para criar um post</a></p>
         <?php endif; ?>
-        <hr>
-        <h2>Posts</h2>
         <?php if (count($posts) === 0): ?>
-            <p>Nenhum post ainda.</p>
+            <div class="subforum">
+                <div class="sf-titulo center">
+                    <h1>Nenhum post ainda</h1>
+                </div>
+            </div>
         <?php else: ?>
             <?php foreach ($posts as $post): ?>
-                <div class="subforum" style="margin-bottom:20px;">
-                    <div class="sf-titulo" style="display:flex;align-items:center;gap:10px;">
-                        <img src="https://i.ibb.co/gFwDDny3/image-removebg-preview-1.png" alt="Foto do post" style="height:32px;width:32px;object-fit:contain;">
-                        <b><?= htmlspecialchars($post['title']) ?></b>
-                        <span style="flex:1 1 auto;"></span>
-                        <span style="font-size:0.9em;">por <?= htmlspecialchars($post['username']) ?> em <?= date('d/m/Y H:i', strtotime($post['created_at'])) ?><?php if ($post['updated_at'] && $post['updated_at'] != $post['created_at']) echo ' (editado)'; ?></span>
-                    </div>
-                    <div class="sf-descricao" style="padding:15px; background:#bbc75f; color:#222; border-radius:0 0 10px 10px;">
-                        <?php if ($user_id && $post['user_id'] == $user_id && isset($_GET['edit_post']) && $_GET['edit_post'] == $post['id']): ?>
-                            <form method="post">
+                <div class="subforum">
+                    <div class="sf-titulo center">
+                        <h1><?= htmlspecialchars($post['title']) ?></h1>
+                        <span class="separador"></span>
+                        <span class="estatisticas"><?= htmlspecialchars($post['username']) ?> em <?= date('d/m/Y H:i', strtotime($post['created_at'])) ?><?php if ($post['updated_at'] && $post['updated_at'] != $post['created_at']) echo ' (editado)'; ?></span>
+                        <?php if ($user_id && ($is_admin || $post['user_id'] == $user_id)): ?>
+                            <form method="post" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja excluir este post?');">
                                 <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
-                                <input type="text" name="title" value="<?= htmlspecialchars($post['title']) ?>" required><br>
-                                <textarea name="content" required style="width:100%;min-height:80px;"><?= htmlspecialchars($post['content']) ?></textarea><br>
-                                <button type="submit" name="edit_post">Salvar</button>
-                                <a href="forum.php?id=<?= $forum_id ?>">Cancelar</a>
+                                <button type="submit" name="delete_post" class="botao-vermelho">Excluir</button>
                             </form>
-                        <?php else: ?>
-                            <?= nl2br(htmlspecialchars($post['content'])) ?>
-                            <?php if ($user_id && ($post['user_id'] == $user_id || $is_admin)): ?>
-                                <form method="post" style="display:inline; float:right; margin-left:10px;">
-                                    <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
-                                    <button type="submit" name="delete_post" onclick="return confirm('Excluir este post?');">Excluir</button>
-                                </form>
-                                <a href="forum.php?id=<?= $forum_id ?>&edit_post=<?= $post['id'] ?>" style="float:right;">Editar</a>
-                            <?php endif; ?>
+                            <button onclick="toggleEditPost(<?= $post['id'] ?>)" class="botao-verde">Editar</button>
                         <?php endif; ?>
-                        <div style="clear:both;"></div>
                     </div>
-                    <div style="padding:10px 20px; background:#f9f9f9; border-radius:0 0 10px 10px;">
-                        <b>Comentários:</b>
-                        <?php if (!empty($comments[$post['id']])): ?>
-                            <?php foreach ($comments[$post['id']] as $comment): ?>
-                                <div style="margin:8px 0; padding:8px; background:#eee; border-radius:5px; color:#222;">
-                                    <?php if ($user_id && $comment['user_id'] == $user_id && isset($_GET['edit_comment']) && $_GET['edit_comment'] == $comment['id']): ?>
-                                        <form method="post">
-                                            <input type="hidden" name="comment_id" value="<?= $comment['id'] ?>">
-                                            <textarea name="content" required style="width:100%;min-height:40px;"><?= htmlspecialchars($comment['content']) ?></textarea><br>
-                                            <button type="submit" name="edit_comment">Salvar</button>
-                                            <a href="forum.php?id=<?= $forum_id ?>">Cancelar</a>
-                                        </form>
-                                    <?php else: ?>
-                                        <span style="font-weight:bold; color:#327f32;"><?= htmlspecialchars($comment['username']) ?></span>:
-                                        <?= nl2br(htmlspecialchars($comment['content'])) ?>
-                                        <span style="float:right; font-size:0.85em; color:#888;">em <?= date('d/m/Y H:i', strtotime($comment['created_at'])) ?></span>
-                                        <?php if ($user_id && $comment['user_id'] == $user_id): ?>
-                                            <form method="post" style="display:inline; float:right; margin-left:10px;">
-                                                <input type="hidden" name="comment_id" value="<?= $comment['id'] ?>">
-                                                <button type="submit" name="delete_comment" onclick="return confirm('Excluir este comentário?');">Excluir</button>
-                                            </form>
-                                            <a href="forum.php?id=<?= $forum_id ?>&edit_comment=<?= $comment['id'] ?>" style="float:right;">Editar</a>
-                                        <?php endif; ?>
-                                    <?php endif; ?>
-                                    <div style="clear:both;"></div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <div style="color:#888;">Nenhum comentário, seja o primeiro!</div>
-                        <?php endif; ?>
-                        <?php if ($user_id): ?>
-                        <form method="post" class="ajax-comment-form" data-post-id="<?= $post['id'] ?>" id="form-comentario-<?= $post['id'] ?>" style="margin-top:10px;">
+                    <div class="forum-conteudo">
+                        <div class="sf-descricao">
+                            <span><?= nl2br(htmlspecialchars($post['content'])) ?></span>
+                        </div>
+                        <?php if ($user_id && ($is_admin || $post['user_id'] == $user_id)): ?>
+                        <form method="post" class="edit-post-form center-column" id="edit-post-<?= $post['id'] ?>" style="display:none;">
                             <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
-                            <textarea name="comment_content" placeholder="Comente aqui..." required style="width:100%;min-height:40px;"></textarea><br>
-                            <button type="submit" name="create_comment">Comentar</button>
+                            <input class="formulario-nome" type="text" name="title" value="<?= htmlspecialchars($post['title']) ?>" required><br>
+                            <textarea class="formulario-descricao" name="content" required><?= htmlspecialchars($post['content']) ?></textarea><br>
+                            <button class="botao-verde" type="submit" name="edit_post">Salvar</button>
+                            <button type="button" onclick="toggleEditPost(<?= $post['id'] ?>)">Cancelar</button>
                         </form>
-                        <div id="comentarios-<?= $post['id'] ?>">
+                        <?php endif; ?>
+                        <div>
+                            <h1 class="center">Comentários</h1>
                             <?php if (!empty($comments[$post['id']])): ?>
                                 <?php foreach ($comments[$post['id']] as $comment): ?>
-                                    <div style="margin:8px 0; padding:8px; background:#eee; border-radius:5px; color:#222;">
+                                    <div class="comentario">
+                                        <span><?= htmlspecialchars($comment['username']) ?></span>:
+                                        <span><?= nl2br(htmlspecialchars($comment['content'])) ?></span>
+                                        <br><br>
+                                        <div class="center">
+                                            <span><?= date('d/m/Y H:i', strtotime($comment['created_at'])) ?> | </span>
+                                            <?php if ($user_id && $comment['user_id'] == $user_id): ?>
+                                                <a href="forum.php?id=<?= $forum_id ?>&edit_comment=<?= $comment['id'] ?>">Editar</a>
+                                            <?php endif; ?>
+                                        </div>
                                         <?php if ($user_id && $comment['user_id'] == $user_id && isset($_GET['edit_comment']) && $_GET['edit_comment'] == $comment['id']): ?>
-                                            <form method="post">
+                                            <form method="post" class="center-column">
                                                 <input type="hidden" name="comment_id" value="<?= $comment['id'] ?>">
-                                                <textarea name="content" required style="width:100%;min-height:40px;"><?= htmlspecialchars($comment['content']) ?></textarea><br>
-                                                <button type="submit" name="edit_comment">Salvar</button>
+                                                <textarea class="forum-formulario-descricao" name="content" required><?= htmlspecialchars($comment['content']) ?></textarea>
+                                                <button class="botao-verde" type="submit" name="edit_comment">Salvar</button>
                                                 <a href="forum.php?id=<?= $forum_id ?>">Cancelar</a>
                                             </form>
-                                        <?php else: ?>
-                                            <span style="font-weight:bold; color:#327f32;"><?= htmlspecialchars($comment['username']) ?></span>:
-                                            <?= nl2br(htmlspecialchars($comment['content'])) ?>
-                                            <span style="float:right; font-size:0.85em; color:#888;">em <?= date('d/m/Y H:i', strtotime($comment['created_at'])) ?></span>
-                                            <?php if ($user_id && $comment['user_id'] == $user_id): ?>
-                                                <form method="post" style="display:inline; float:right; margin-left:10px;">
-                                                    <input type="hidden" name="comment_id" value="<?= $comment['id'] ?>">
-                                                    <button type="submit" name="delete_comment" onclick="return confirm('Excluir este comentário?');">Excluir</button>
-                                                </form>
-                                                <a href="forum.php?id=<?= $forum_id ?>&edit_comment=<?= $comment['id'] ?>" style="float:right;">Editar</a>
-                                            <?php endif; ?>
                                         <?php endif; ?>
-                                        <div style="clear:both;"></div>
                                     </div>
                                 <?php endforeach; ?>
                             <?php else: ?>
-                                <div style="color:#888;">Nenhum comentário, seja o primeiro!</div>
+                                <div class="comentario">Nenhum comentário, seja o primeiro!</div>
+                            <?php endif; ?>
+                            <?php if ($user_id): ?>
+                            <form class="center-column" method="post">
+                                <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
+                                <textarea class="forum-formulario-descricao" name="comment_content" placeholder="Comente aqui..." required></textarea>
+                                <button class="botao-verde" type="submit" name="create_comment">Comentar</button>
+                            </form>
                             <?php endif; ?>
                         </div>
-                        <?php endif; ?>
                     </div>
                 </div>
             <?php endforeach; ?>
         <?php endif; ?>
-        <div style="text-align:center; margin-top:2em;">
-            <a href="forums.php" title="Voltar para Fóruns" style="display:inline-flex;align-items:center;gap:8px;padding:10px 22px;background:#327f32;color:#fff;font-weight:bold;border-radius:8px;font-size:1.1em;text-decoration:none;box-shadow:0 2px 8px rgba(50,127,50,0.10);transition:background 0.2s;">
-                <img src="https://i.ibb.co/ZRKbDVzf/image-removebg-preview.png" alt="Voltar" style="height:1.5em;vertical-align:middle;">
-                Voltar para Fóruns
-            </a>
-        </div>
     </div>
+    <footer>
+        <span>&copy; Saulo, Samuel Oliveira, Samuel Cavalcante | All Rights Reserved</span>
+    </footer>
+    <script>
+    function toggleEditPost(id) {
+        var form = document.getElementById('edit-post-' + id);
+        if (form.style.display === 'none') {
+            form.style.display = 'flex';
+        } else {
+            form.style.display = 'none';
+        }
+    }
+    </script>
 </body>
 </html>
-<script>
-document.querySelectorAll('.ajax-comment-form').forEach(function(form) {
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        var postId = form.getAttribute('data-post-id');
-        var formData = new FormData(form);
-        formData.append('ajax_create_comment', '1');
-        fetch('forum.php?id=' + <?= $forum_id ?>, {
-            method: 'POST',
-            body: formData
-        })
-        .then(r => r.text())
-        .then(function(html) {
-            if (html.trim()) {
-                document.getElementById('comentarios-' + postId).insertAdjacentHTML('beforeend', html);
-                form.reset();
-            }
-        });
-    });
-});
-</script>

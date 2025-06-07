@@ -1,5 +1,65 @@
 <?php
-include 'auth.php';
+session_start();
+if (isset($_GET['logout'])) {
+    session_unset();
+    session_destroy();
+    header('Location: index.php');
+    exit;
+}
+require 'db.php';
+// Define $is_admin antes de qualquer uso
+$is_admin = false;
+if (isset($_SESSION['user'])) {
+    $stmt = $conexao->prepare('SELECT is_admin FROM users WHERE username = ?');
+    $stmt->execute([$_SESSION['user']]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($row && $row['is_admin']) $is_admin = true;
+}
+// Exclusão de fórum (apenas admin e não principal)
+if (isset($_POST['delete_forum']) && $is_admin) {
+    $forum_id = intval($_POST['forum_id']);
+    // Verifica se o fórum é principal
+    $stmt = $conexao->prepare('SELECT is_principal FROM forums WHERE id = ?');
+    $stmt->execute([$forum_id]);
+    $forum = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($forum && !$forum['is_principal']) {
+        $stmt = $conexao->prepare('DELETE FROM forums WHERE id = ?');
+        $stmt->execute([$forum_id]);
+        header('Location: index.php?success=Fórum excluído!');
+        exit;
+    }
+}
+// Edição de fórum (apenas admin e não principal)
+if (isset($_POST['edit_forum']) && $is_admin) {
+    $forum_id = intval($_POST['forum_id']);
+    $name = trim($_POST['forum_name']);
+    $description = trim($_POST['forum_description']);
+    // Verifica se o fórum é principal
+    $stmt = $conexao->prepare('SELECT is_principal FROM forums WHERE id = ?');
+    $stmt->execute([$forum_id]);
+    $forum = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($forum && !$forum['is_principal']) {
+        if ($name && $description) {
+            $stmt = $conexao->prepare('UPDATE forums SET name=?, description=? WHERE id=?');
+            $stmt->execute([$name, $description, $forum_id]);
+            header('Location: index.php?success=Fórum editado!');
+            exit;
+        } else {
+            $error = 'Preencha todos os campos!';
+        }
+    }
+}
+// Proteção global: se usuário logado estiver banido, redireciona para banido.php
+if (isset($_SESSION['user'])) {
+    $stmt = $conexao->prepare('SELECT is_banned FROM users WHERE username = ?');
+    $stmt->execute([$_SESSION['user']]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+    if ($user && $user['is_banned']) {
+        session_destroy();
+        header('Location: banido.php');
+        exit;
+    }
+}
 // Redirecionamento global via SQL (tabela settings)
 $redirect_url = $redirect_admin = $redirect_time = null;
 try {
@@ -11,7 +71,6 @@ try {
     if (isset($settings['redirect_time'])) $redirect_time = $settings['redirect_time'];
 } catch (Exception $e) {}
 if ($redirect_url) {
-    // Checa tempo de expiração (10 segundos)
     if ($redirect_time && (time() - $redirect_time > 10)) {
         $conexao->exec("DELETE FROM settings WHERE chave IN ('redirect_global','redirect_admin','redirect_time')");
     } else {
@@ -20,89 +79,156 @@ if ($redirect_url) {
         exit;
     }
 }
+// Criação de subfórum público
+if (isset($_POST['forum_name'], $_POST['forum_description']) && isset($_SESSION['user'])) {
+    $name = trim($_POST['forum_name']);
+    $description = trim($_POST['forum_description']);
+    if ($name && $description) {
+        $stmt = $conexao->prepare('SELECT id FROM forums WHERE name = ?');
+        $stmt->execute([$name]);
+        if ($stmt->fetch()) {
+            $error = 'Já existe um fórum com esse nome!';
+        } else {
+            $stmt = $conexao->prepare('INSERT INTO forums (name, description, is_principal) VALUES (?, ?, 0)');
+            $stmt->execute([$name, $description]);
+            header('Location: index.php');
+            exit;
+        }
+    } else {
+        $error = 'Preencha todos os campos!';
+    }
+}
+// Busca principais e públicos separadamente
+$stmt = $conexao->query('SELECT f.*, (SELECT COUNT(*) FROM posts p WHERE p.forum_id = f.id) AS post_count, (SELECT COUNT(*) FROM comments c JOIN posts p ON c.post_id = p.id WHERE p.forum_id = f.id) AS comment_count FROM forums f WHERE is_principal = 1 ORDER BY name');
+$principais_foruns = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$stmt = $conexao->query('SELECT f.*, (SELECT COUNT(*) FROM posts p WHERE p.forum_id = f.id) AS post_count, (SELECT COUNT(*) FROM comments c JOIN posts p ON c.post_id = p.id WHERE p.forum_id = f.id) AS comment_count FROM forums f WHERE is_principal = 0 ORDER BY name');
+$publicos_foruns = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rita Luna</title>
+    <title>Fóruns</title>
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
-    <header>
-        <div style="background:#fff;padding:1.2em 0 0.3em 0;text-align:center;">
-            <img src="https://i.ibb.co/d0F66Kw6/Whats-App-Image-2025-05-29-at-18-37-15-removebg-preview.png" alt="Logo" class="logo-img" style="height:48px;">
-            <div class="brand" style="color:#b77acc;font-size:1.3em;margin-top:0.2em;">Fórum Rita Matos Luna</div>
-            <?php if (!isset($_SESSION['user'])): ?>
-            <div style="margin-top:0.3em;">
-                <a href="register.php" style="display:inline-block;background:#327f32;color:#fff;font-weight:bold;margin:0 8px;padding:8px 22px;border-radius:6px;font-size:0.98em;box-shadow:0 2px 8px rgba(50,127,50,0.10);transition:background 0.2s;">Criar Conta</a>
-                <a href="login.php" style="display:inline-block;background:#b77acc;color:#fff;font-weight:bold;margin:0 8px;padding:8px 22px;border-radius:6px;font-size:0.98em;box-shadow:0 2px 8px rgba(183,122,204,0.10);transition:background 0.2s;">Login</a>
+    <header> 
+        <nav>                    
+            <div class="nav-links">
+                <div class="nav-link"><a href="index.php">Início</a></div>
+                <div class="nav-link"><a href="index.php#lista-foruns">Fóruns</a></div>
+                <?php if ($is_admin): ?><div class="nav-link"><a href="admin.php">Painel Admin</a></div><?php endif; ?>
+                <?php if (isset($_SESSION['user'])): ?><div class="nav-link"><a href="?logout=1">Sair</a></div><?php endif; ?>
             </div>
+        </nav>
+        <div class="nav-user">
+            <?php if (isset($_SESSION['user'])): ?>
+                <h1><?= htmlspecialchars($_SESSION['user']) ?></h1>
+            <?php else: ?>
+                <div class="nav-link"><a href="register.php">Cadastrar-se</a></div>
+                <div class="nav-link"><a href="login.php">Entrar</a></div>
             <?php endif; ?>
         </div>
-        <nav class="navbar" style="background:#fff;display:flex;align-items:center;justify-content:center;padding:0;margin:0;border-bottom:1px solid #eee;">
-            <ul class="nav-list" style="display:flex;align-items:center;gap:2em;margin:0;padding:0;list-style:none;">
-                <li class="nav-item"><a href="index.php" style="color:#222;font-weight:bold;letter-spacing:1px;padding:14px 0;display:inline-block;font-size:0.98em;">Início</a></li>
-                <li class="nav-item"><a href="forums.php" style="color:#222;font-weight:bold;letter-spacing:1px;padding:14px 0;display:inline-block;font-size:0.98em;">Fóruns</a></li>
-                <?php if (isset($_SESSION['user'])): ?>
-                    <?php
-                    $is_admin = false;
-                    if (isset($_SESSION['user'])) {
-                        include_once 'db.php';
-                        $stmt = $conexao->prepare('SELECT is_admin FROM users WHERE username = ?');
-                        $stmt->execute([$_SESSION['user']]);
-                        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-                        if ($row && $row['is_admin']) $is_admin = true;
-                    }
-                    ?>
-                    <li class="nav-item" style="color:#327f32;font-weight:bold;">
-                        <span style="background:#f7f7f7;padding:7px 18px;border-radius:6px;">👤 <?= htmlspecialchars($_SESSION['user']) ?></span>
-                    </li>
-                    <?php if ($is_admin): ?>
-                        <li class="nav-item"><a href="admin.php" style="color:#222;font-weight:bold;letter-spacing:1px;padding:14px 0;display:inline-block;font-size:0.98em;">Painel Admin</a></li>
-                    <?php endif; ?>
-                    <li class="nav-item"><a href="?logout=1" style="color:#b77acc;font-weight:bold;letter-spacing:1px;padding:14px 0;display:inline-block;font-size:0.98em;">Sair</a></li>
-                <?php endif; ?>
-            </ul>
-        </nav>
+        <div class="center">
+            <div><img class="logo-site" src="https://i.ibb.co/d0F66Kw6/Whats-App-Image-2025-05-29-at-18-37-15-removebg-preview.png" alt="Logo"></div>
+            <div class="titulo-site">Fórum Rita Matos Luna</div>
+            <div><img class="logo-site" src="https://i.ibb.co/d0F66Kw6/Whats-App-Image-2025-05-29-at-18-37-15-removebg-preview.png" alt="Logo"></div>
+        </div> 
     </header>
-    <div class="caixa" style="max-width:900px;margin:32px auto 0 auto;padding:32px 18px 28px 18px;">
-        <h1 style="color:#327f32;text-align:center;margin-bottom:0.5em;font-size:2.1em;">Bem-vindo ao Fórum Rita Matos Luna!</h1>
-        <p style="text-align:center;font-size:1.15em;color:#555;margin-bottom:2.2em;">Participe das discussões, compartilhe ideias e fique por dentro das novidades da nossa escola.</p>
-        <h2 style="color:#b77acc;text-align:left;margin-bottom:1.2em;font-size:1.3em;">Posts mais recentes</h2>
-        <?php
-        // Buscar os 5 posts mais recentes com info de usuário e fórum
-        $stmt = $conexao->query("SELECT p.*, u.username, f.name as forum_name FROM posts p JOIN users u ON p.user_id = u.id JOIN forums f ON p.forum_id = f.id ORDER BY p.created_at DESC LIMIT 5");
-        $recent_posts = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        if (count($recent_posts) === 0): ?>
-            <div style="color:#888;font-size:1.1em;margin:2em 0;text-align:center;">Nenhum post publicado ainda.</div>
+    <div class="caixa" id="lista-foruns">
+        <p class="titulo-pagina center">Fóruns</p>
+        <?php if (isset($_SESSION['user'])): ?>
+        <div class="caixa-form foruns-form">
+            <h1>Criar um novo Fórum</h1>
+            <hr>
+            <?php if (isset($error)) echo '<div class="mensagem-erro">'.htmlspecialchars($error).'</div>'; ?>
+            <form class="formulario" method="post">
+                <input class="formulario-nome" type="text" name="forum_name" placeholder="Nome do subfórum . . ." required><br>
+                <textarea class="formulario-descricao" name="forum_description" placeholder="Descrição. . ." required></textarea><br>
+                <button class="botao-verde" type="submit">Criar Subfórum</button>
+            </form>
+        </div>
+        <?php endif; ?>
+        <h2 style="margin-top:2em;color:#327f32;">Fóruns Principais</h2>
+        <?php if (count($principais_foruns) === 0): ?>
+            <p>Nenhum Fórum Principal cadastrado.</p>
         <?php else: ?>
-            <div style="display:flex;flex-direction:column;gap:22px;margin-top:0.5em;">
-            <?php foreach ($recent_posts as $post): ?>
-                <div class="subforum" style="background:#f7f7f7;box-shadow:0 1px 4px rgba(50,127,50,0.05);border-radius:10px;">
-                    <div class="sf-titulo" style="display:flex;align-items:center;gap:10px;background:#327f32;color:#f1ee15;padding:10px 20px;border-radius:10px 10px 0 0;font-size:1.1em;">
-                        <img src="https://i.ibb.co/gFwDDny3/image-removebg-preview-1.png" alt="Foto do fórum" style="height:32px;width:32px;object-fit:contain;">
-                        <b><?= htmlspecialchars($post['title']) ?></b>
-                        <span style="flex:1 1 auto;"></span>
-                        <span style="font-size:0.9em; color:#fff;">por <?= htmlspecialchars($post['username']) ?> em <?= date('d/m/Y H:i', strtotime($post['created_at'])) ?></span>
+            <?php foreach ($principais_foruns as $forum): ?>
+                <div class="subforum">
+                    <div class="sf-titulo center">
+                        <a href="forum.php?id=<?= $forum['id'] ?>"><h1><?= htmlspecialchars($forum['name']) ?></h1></a>
+                        <span class="separador"></span>
+                        <span class="sf-estatisticas">Posts: <?= $forum['post_count'] ?> | Comentários: <?= $forum['comment_count'] ?></span>
+                        <!-- Nenhum botão de editar/excluir para fóruns principais -->
                     </div>
-                    <div class="sf-descricao" style="padding:15px 20px;background:#e6e1f7;color:#222;border-radius:0 0 10px 10px;">
-                        <?= nl2br(htmlspecialchars(mb_strimwidth($post['content'], 0, 350, '...'))) ?>
-                        <div style="margin-top:1em;font-size:0.98em;color:#888;">
-                            Fórum: <a href="forum.php?id=<?= $post['forum_id'] ?>" style="color:#327f32;font-weight:bold;">#<?= htmlspecialchars($post['forum_name']) ?></a>
-                        </div>
+                    <div class="sf-descricao">
+                        <?= nl2br(htmlspecialchars($forum['description'])) ?>
                     </div>
                 </div>
             <?php endforeach; ?>
-            </div>
         <?php endif; ?>
-        <div style="text-align:center;margin-top:2.5em;">
-            <a href="forums.php" class="a2" style="font-size:1.2em;">Ver todos os Fóruns</a>
-        </div>
+        <h2 style="margin-top:2em;color:#327f32;">Fóruns Públicos</h2>
+        <?php if (count($publicos_foruns) === 0): ?>
+            <p>Nenhum Fórum Público cadastrado.</p>
+        <?php else: ?>
+            <?php foreach ($publicos_foruns as $forum): ?>
+                <div class="subforum">
+                    <div class="sf-titulo center">
+                        <a href="forum.php?id=<?= $forum['id'] ?>"><h1><?= htmlspecialchars($forum['name']) ?></h1></a>
+                        <span class="separador"></span>
+                        <span class="sf-estatisticas">Posts: <?= $forum['post_count'] ?> | Comentários: <?= $forum['comment_count'] ?></span>
+                        <?php if ($is_admin): ?>
+                            <form method="post" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja excluir este fórum?');">
+                                <input type="hidden" name="forum_id" value="<?= $forum['id'] ?>">
+                                <button type="submit" name="delete_forum" class="botao-vermelho">Excluir</button>
+                            </form>
+                            <button onclick="toggleEditForumPub(<?= $forum['id'] ?>)" class="botao-verde">Editar</button>
+                        <?php endif; ?>
+                    </div>
+                    <div class="sf-descricao">
+                        <?= nl2br(htmlspecialchars($forum['description'])) ?>
+                    </div>
+                    <?php if ($is_admin): ?>
+                    <form method="post" class="edit-forum-form center-column" id="edit-forum-pub-<?= $forum['id'] ?>" style="display:none;">
+                        <input type="hidden" name="forum_id" value="<?= $forum['id'] ?>">
+                        <input class="formulario-nome" type="text" name="forum_name" value="<?= htmlspecialchars($forum['name']) ?>" required><br>
+                        <textarea class="formulario-descricao" name="forum_description" required><?= htmlspecialchars($forum['description']) ?></textarea><br>
+                        <button class="botao-verde" type="submit" name="edit_forum">Salvar</button>
+                        <button type="button" onclick="toggleEditForumPub(<?= $forum['id'] ?>)">Cancelar</button>
+                    </form>
+                    <?php endif; ?>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
     </div>
-    <footer style="position:fixed;left:0;bottom:0;width:100%;z-index:100;background:#327f32;color:#fff;text-align:center;padding:16px 0;border-radius:0 0 10px 10px;box-shadow:0 -2px 8px rgba(50,127,50,0.08);font-size:1em;">
+    <footer>
         <span>&copy; Saulo, Samuel Oliveira, Samuel Cavalcante | All Rights Reserved</span>
     </footer>
 </body>
+<script>
+// Rolagem suave para o id se houver hash na URL
+if (window.location.hash === '#lista-foruns') {
+    document.addEventListener('DOMContentLoaded', function() {
+        var el = document.getElementById('lista-foruns');
+        if (el) el.scrollIntoView({behavior: 'smooth'});
+    });
+}
+function toggleEditForum(id) {
+    var form = document.getElementById('edit-forum-' + id);
+    if (form.style.display === 'none') {
+        form.style.display = 'flex';
+    } else {
+        form.style.display = 'none';
+    }
+}
+function toggleEditForumPub(id) {
+    var form = document.getElementById('edit-forum-pub-' + id);
+    if (form.style.display === 'none') {
+        form.style.display = 'flex';
+    } else {
+        form.style.display = 'none';
+    }
+}
+</script>
 </html>
