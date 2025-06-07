@@ -63,7 +63,7 @@ $users = $conexao->query('SELECT id, username, is_admin, is_banned FROM users')-
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Painel do Administrador, teste</title>
+    <title>Painel do Administrador</title>
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
