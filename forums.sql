@@ -11,8 +11,7 @@ CREATE TABLE users (
 CREATE TABLE forums (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    description TEXT,
-    is_principal TINYINT(1) DEFAULT 0 -- 1 para fóruns principais, 0 para públicos
+    description TEXT
 );
 
 -- Criação da tabela de posts (já deve existir, mas aqui com forum_id)
@@ -40,6 +39,5 @@ CREATE TABLE comments (
 );
 
 -- ALTER TABLE para migração em bancos já existentes:
--- ALTER TABLE forums ADD COLUMN is_principal TINYINT(1) DEFAULT 0;
 -- ALTER TABLE users ADD COLUMN is_admin TINYINT(1) DEFAULT 0;
 -- ALTER TABLE users ADD COLUMN is_banned TINYINT(1) DEFAULT 0;

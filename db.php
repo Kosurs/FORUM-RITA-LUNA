@@ -2,7 +2,7 @@
 // db.php: Conexão com MySQL/MariaDB
 $host = "127.0.0.1";
 $porta = "3306";
-$banco = "miy";
+$banco = "forum";
 $usuario = "root";
 $senha = "";
 

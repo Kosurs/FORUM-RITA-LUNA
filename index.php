@@ -15,38 +15,26 @@ if (isset($_SESSION['user'])) {
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if ($row && $row['is_admin']) $is_admin = true;
 }
-// Exclusão de fórum (apenas admin e não principal)
+// Exclusão de fórum (apenas admin)
 if (isset($_POST['delete_forum']) && $is_admin) {
     $forum_id = intval($_POST['forum_id']);
-    // Verifica se o fórum é principal
-    $stmt = $conexao->prepare('SELECT is_principal FROM forums WHERE id = ?');
+    $stmt = $conexao->prepare('DELETE FROM forums WHERE id = ?');
     $stmt->execute([$forum_id]);
-    $forum = $stmt->fetch(PDO::FETCH_ASSOC);
-    if ($forum && !$forum['is_principal']) {
-        $stmt = $conexao->prepare('DELETE FROM forums WHERE id = ?');
-        $stmt->execute([$forum_id]);
-        header('Location: index.php?success=Fórum excluído!');
-        exit;
-    }
+    header('Location: index.php?success=Fórum excluído!');
+    exit;
 }
-// Edição de fórum (apenas admin e não principal)
+// Edição de fórum (apenas admin)
 if (isset($_POST['edit_forum']) && $is_admin) {
     $forum_id = intval($_POST['forum_id']);
     $name = trim($_POST['forum_name']);
     $description = trim($_POST['forum_description']);
-    // Verifica se o fórum é principal
-    $stmt = $conexao->prepare('SELECT is_principal FROM forums WHERE id = ?');
-    $stmt->execute([$forum_id]);
-    $forum = $stmt->fetch(PDO::FETCH_ASSOC);
-    if ($forum && !$forum['is_principal']) {
-        if ($name && $description) {
-            $stmt = $conexao->prepare('UPDATE forums SET name=?, description=? WHERE id=?');
-            $stmt->execute([$name, $description, $forum_id]);
-            header('Location: index.php?success=Fórum editado!');
-            exit;
-        } else {
-            $error = 'Preencha todos os campos!';
-        }
+    if ($name && $description) {
+        $stmt = $conexao->prepare('UPDATE forums SET name=?, description=? WHERE id=?');
+        $stmt->execute([$name, $description, $forum_id]);
+        header('Location: index.php?success=Fórum editado!');
+        exit;
+    } else {
+        $error = 'Preencha todos os campos!';
     }
 }
 // Proteção global: se usuário logado estiver banido, redireciona para banido.php
@@ -89,7 +77,7 @@ if (isset($_POST['forum_name'], $_POST['forum_description']) && isset($_SESSION[
         if ($stmt->fetch()) {
             $error = 'Já existe um fórum com esse nome!';
         } else {
-            $stmt = $conexao->prepare('INSERT INTO forums (name, description, is_principal) VALUES (?, ?, 0)');
+            $stmt = $conexao->prepare('INSERT INTO forums (name, description) VALUES (?, ?)');
             $stmt->execute([$name, $description]);
             header('Location: index.php');
             exit;
@@ -98,10 +86,8 @@ if (isset($_POST['forum_name'], $_POST['forum_description']) && isset($_SESSION[
         $error = 'Preencha todos os campos!';
     }
 }
-// Busca principais e públicos separadamente
-$stmt = $conexao->query('SELECT f.*, (SELECT COUNT(*) FROM posts p WHERE p.forum_id = f.id) AS post_count, (SELECT COUNT(*) FROM comments c JOIN posts p ON c.post_id = p.id WHERE p.forum_id = f.id) AS comment_count FROM forums f WHERE is_principal = 1 ORDER BY name');
-$principais_foruns = $stmt->fetchAll(PDO::FETCH_ASSOC);
-$stmt = $conexao->query('SELECT f.*, (SELECT COUNT(*) FROM posts p WHERE p.forum_id = f.id) AS post_count, (SELECT COUNT(*) FROM comments c JOIN posts p ON c.post_id = p.id WHERE p.forum_id = f.id) AS comment_count FROM forums f WHERE is_principal = 0 ORDER BY name');
+// Buscar todos os fóruns (não há mais principais)
+$stmt = $conexao->query('SELECT f.*, (SELECT COUNT(*) FROM posts p WHERE p.forum_id = f.id) AS post_count, (SELECT COUNT(*) FROM comments c JOIN posts p ON c.post_id = p.id WHERE p.forum_id = f.id) AS comment_count FROM forums f ORDER BY name');
 $publicos_foruns = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
@@ -144,33 +130,15 @@ $publicos_foruns = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <hr>
             <?php if (isset($error)) echo '<div class="mensagem-erro">'.htmlspecialchars($error).'</div>'; ?>
             <form class="formulario" method="post">
-                <input class="formulario-nome" type="text" name="forum_name" placeholder="Nome do subfórum . . ." required><br>
+                <input class="formulario-nome" type="text" name="forum_name" placeholder="Nome do fórum . . ." required><br>
                 <textarea class="formulario-descricao" name="forum_description" placeholder="Descrição. . ." required></textarea><br>
-                <button class="botao-verde" type="submit">Criar Subfórum</button>
+                <button class="botao-verde" type="submit">Criar Fórum</button>
             </form>
         </div>
         <?php endif; ?>
-        <h2 style="margin-top:2em;color:#327f32;">Fóruns Principais</h2>
-        <?php if (count($principais_foruns) === 0): ?>
-            <p>Nenhum Fórum Principal cadastrado.</p>
-        <?php else: ?>
-            <?php foreach ($principais_foruns as $forum): ?>
-                <div class="subforum">
-                    <div class="sf-titulo center">
-                        <a href="forum.php?id=<?= $forum['id'] ?>"><h1><?= htmlspecialchars($forum['name']) ?></h1></a>
-                        <span class="separador"></span>
-                        <span class="sf-estatisticas">Posts: <?= $forum['post_count'] ?> | Comentários: <?= $forum['comment_count'] ?></span>
-                        <!-- Nenhum botão de editar/excluir para fóruns principais -->
-                    </div>
-                    <div class="sf-descricao">
-                        <?= nl2br(htmlspecialchars($forum['description'])) ?>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        <?php endif; ?>
-        <h2 style="margin-top:2em;color:#327f32;">Fóruns Públicos</h2>
+        <h2 style="margin-top:2em;color:#327f32;">Fóruns</h2>
         <?php if (count($publicos_foruns) === 0): ?>
-            <p>Nenhum Fórum Público cadastrado.</p>
+            <p>Nenhum Fórum cadastrado.</p>
         <?php else: ?>
             <?php foreach ($publicos_foruns as $forum): ?>
                 <div class="subforum">
