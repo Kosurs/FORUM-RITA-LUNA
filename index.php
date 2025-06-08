@@ -110,7 +110,12 @@ $publicos_foruns = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </nav>
         <div class="nav-user">
             <?php if (isset($_SESSION['user'])): ?>
-                <h1><?= htmlspecialchars($_SESSION['user']) ?></h1>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <h1 style="margin:0;"><?= htmlspecialchars($_SESSION['user']) ?></h1>
+                    <form method="post" action="auth.php" style="display:inline;">
+                        <button type="submit" name="delete_account" class="botao-vermelho" style="font-size:13px;padding:5px 12px;" onclick="return confirm('Tem certeza que deseja excluir sua conta? Esta ação é irreversível.');">Excluir conta</button>
+                    </form>
+                </div>
             <?php else: ?>
                 <div class="nav-link"><a href="register.php">Cadastrar-se</a></div>
                 <div class="nav-link"><a href="login.php">Entrar</a></div>
@@ -122,6 +127,17 @@ $publicos_foruns = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <div><img class="logo-site" src="https://i.ibb.co/d0F66Kw6/Whats-App-Image-2025-05-29-at-18-37-15-removebg-preview.png" alt="Logo"></div>
         </div> 
     </header>
+    <div class="caixa" id="boas-vindas" style="margin-bottom:30px;">
+        <div class="center-column" style="background:#fff;color:#4B7F4B;padding:30px 20px;border-radius:20px;box-shadow:2px 4px 12px #4B7F4B;margin-bottom:20px;">
+            <h1 style="font-size:2.2em;margin-bottom:10px;">Bem-vindo ao Fórum Rita Matos Luna!</h1>
+            <p style="font-size:1.2em;max-width:600px;">Aqui você pode criar fóruns, postar, comentar e interagir com outros membros da comunidade escolar. Aproveite para compartilhar ideias, tirar dúvidas e participar das discussões!</p>
+            <?php if (isset($_SESSION['user'])): ?>
+                <p style="font-size:1.1em;margin-top:10px;">Olá, <b><?= htmlspecialchars($_SESSION['user']) ?></b>! Que bom te ver por aqui 😊</p>
+            <?php else: ?>
+                <p style="font-size:1.1em;margin-top:10px;">Faça <a href="login.php">login</a> ou <a href="register.php">cadastre-se</a> para participar!</p>
+            <?php endif; ?>
+        </div>
+    </div>
     <div class="caixa" id="lista-foruns">
         <p class="titulo-pagina center">Fóruns</p>
         <?php if (isset($_SESSION['user'])): ?>
