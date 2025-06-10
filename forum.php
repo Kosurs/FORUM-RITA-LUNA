@@ -257,7 +257,7 @@ if ($posts) {
                             <input class="formulario-nome" type="text" name="title" value="<?= htmlspecialchars($post['title']) ?>" required><br>
                             <textarea class="formulario-descricao" name="content" required><?= htmlspecialchars($post['content']) ?></textarea><br>
                             <button class="botao-verde" type="submit" name="edit_post">Salvar</button>
-                            <button type="button" onclick="toggleEditPost(<?= $post['id'] ?>)">Cancelar</button>
+                            <button class="botao-verde" type="button" onclick="toggleEditPost(<?= $post['id'] ?>)">Cancelar</button>
                         </form>
                         <?php endif; ?>
                         <div>
