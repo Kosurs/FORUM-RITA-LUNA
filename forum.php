@@ -72,15 +72,20 @@ if (isset($_SESSION['user'])) {
 
 // Criação de post
 if (isset($_POST['create_post']) && $user_id) {
-    $title = trim($_POST['title']);
-    $content = trim($_POST['content']);
-    if ($title && $content) {
-        $stmtPost = $conexao->prepare('INSERT INTO posts (forum_id, user_id, title, content) VALUES (?, ?, ?, ?)');
-        $stmtPost->execute([$forum_id, $user_id, $title, $content]);
-        header('Location: forum.php?id=' . $forum_id . '&success=Post criado com sucesso!');
-        exit;
+    // Se fórum principal, só admin pode criar
+    if ($forum['is_principal'] && !$is_admin) {
+        $error = 'Apenas administradores podem criar posts neste fórum.';
     } else {
-        $error = 'Preencha todos os campos!';
+        $title = trim($_POST['title']);
+        $content = trim($_POST['content']);
+        if ($title && $content) {
+            $stmtPost = $conexao->prepare('INSERT INTO posts (forum_id, user_id, title, content) VALUES (?, ?, ?, ?)');
+            $stmtPost->execute([$forum_id, $user_id, $title, $content]);
+            header('Location: forum.php?id=' . $forum_id . '&success=Post criado com sucesso!');
+            exit;
+        } else {
+            $error = 'Preencha todos os campos!';
+        }
     }
 }
 
@@ -210,6 +215,9 @@ if ($posts) {
         <?php if (isset($_GET['success'])) echo '<div style="color:green">'.htmlspecialchars($_GET['success']).'</div>'; ?>
         <?php if (isset($error)) echo '<div style="color:red">'.htmlspecialchars($error).'</div>'; ?>
         <?php if ($user_id): ?>
+        <?php if ($forum['is_principal'] && !$is_admin): ?>
+            <div class="caixa-form center-column" style="background:#ffe0e0;color:#b32d1a;">Você não é um administrador :(</div>
+        <?php else: ?>
         <div class="caixa-form center-column">
             <h1>Criar novo post</h1>
             <hr>
@@ -219,6 +227,7 @@ if ($posts) {
                 <button class="botao-verde" type="submit" name="create_post">Publicar</button>
             </form>
         </div>
+        <?php endif; ?>
         <?php endif; ?>
         <?php if (count($posts) === 0): ?>
                     <p class="mensagem-erro">Nenhum Post Ainda</p>

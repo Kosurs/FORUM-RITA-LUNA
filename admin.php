@@ -41,14 +41,6 @@ if (isset($_POST['desbanir_user']) && isset($_POST['ban_user_id'])) {
 if (isset($_POST['banir_todos'])) {
     $conexao->query('UPDATE users SET is_banned=1');
 }
-// Envia aviso global
-if (isset($_POST['enviar_aviso']) && isset($_POST['aviso_texto'])) {
-    $conexao->exec("CREATE TABLE IF NOT EXISTS settings (chave VARCHAR(100) PRIMARY KEY, valor TEXT)");
-    $stmt = $conexao->prepare("REPLACE INTO settings (chave, valor) VALUES ('aviso_global', ?)");
-    $stmt->execute([trim($_POST['aviso_texto'])]);
-    header('Location: admin.php');
-    exit;
-}
 // Redirecionamento global usando SQL
 if (isset($_POST['set_redirect']) && isset($_POST['redirect_url'])) {
     $redirect_url = trim($_POST['redirect_url']);
@@ -70,12 +62,10 @@ if (isset($_POST['remove_redirect'])) {
     exit;
 }
 $users = $conexao->query('SELECT id, username, is_admin, is_banned FROM users')->fetchAll(PDO::FETCH_ASSOC);
-// Carrega aviso e redirect do banco para exibir no painel
-$aviso_global = '';
+// Carrega redirect do banco para exibir no painel
 $redirect_global = '';
 $conexao->exec("CREATE TABLE IF NOT EXISTS settings (chave VARCHAR(100) PRIMARY KEY, valor TEXT)");
-$settings = $conexao->query("SELECT chave, valor FROM settings WHERE chave IN ('aviso_global','redirect_global')")->fetchAll(PDO::FETCH_KEY_PAIR);
-if (isset($settings['aviso_global'])) $aviso_global = $settings['aviso_global'];
+$settings = $conexao->query("SELECT chave, valor FROM settings WHERE chave IN ('redirect_global')")->fetchAll(PDO::FETCH_KEY_PAIR);
 if (isset($settings['redirect_global'])) $redirect_global = $settings['redirect_global'];
 ?>
 <!DOCTYPE html>
@@ -110,10 +100,6 @@ if (isset($settings['redirect_global'])) $redirect_global = $settings['redirect_
         <div class="caixa-form center-column">
             <h1>Painel do Administrador</h1>
             <hr>
-            <form class="admin-avisar" method="post">
-                <input placeholder="Enviar uma mensagem para todos os usuários. . ." class="admin-avisar-texto" id="aviso_texto" name="aviso_texto" type="text" maxlength="200" required>
-                <button class="botao-verde" type="submit" name="enviar_aviso">Enviar Aviso</button>
-            </form>
             <form class="admin-redirecionar" method="post">
                 <input class="admin-redirecionar-texto" type="url" id="redirect_url" name="redirect_url" maxlength="300" placeholder="Redirecionar todos os usuários para um link. . ." required>
                 <?php if ($redirect_global): ?>
