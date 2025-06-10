@@ -7,6 +7,11 @@ CREATE TABLE users (
     is_banned TINYINT(1) DEFAULT 0 -- 1 para banido, 0 para normal
 );
 
+-- Inserts de usuários iniciais (migrados do users.sql)
+INSERT INTO users (username, password, email) VALUES
+('admin', 'admin_password', 'admin@example.com'),
+('user', 'user_password', 'user@example.com');
+
 -- Criação da tabela de fóruns (subfóruns)
 CREATE TABLE forums (
     id INT AUTO_INCREMENT PRIMARY KEY,

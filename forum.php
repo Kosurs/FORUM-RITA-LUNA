@@ -206,7 +206,7 @@ if ($posts) {
         <div class="center">
             <div><img class="logo-site" src="https://i.ibb.co/d0F66Kw6/Whats-App-Image-2025-05-29-at-18-37-15-removebg-preview.png" alt="Logo"></div>
             <div class="titulo-site">Fórum Rita Matos Luna</div>
-            <div><img class="logo-site" src="https://i.ibb.co/d0F66Kw6/Whats-App-Image-2025-05-29-at-18-37-15-removebg-preview.png" alt="Logo"></div>
+            <div><img class="logo-site" src="https://i.ibb.co/SD2TKbT4/image-rita.png" alt="Logo"></div>
         </div>
     </header>
     <div class="caixa">
