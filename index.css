@@ -58,7 +58,7 @@ th, td{
 }
 .mensagem-erro {
     color: red;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     justify-self: center;
     font-size: 20px;
     font-weight: bold;
@@ -140,7 +140,7 @@ nav {
 }
 .descricao-pagina {
     color: #fff;
-    background-color: #4B7F4B;
+    background-color: #E5892D;
     width: 100%;
     padding: 10px 20px;
     justify-self: center;

@@ -124,9 +124,10 @@ $publicos_foruns = $stmt->fetchAll(PDO::FETCH_ASSOC);
         <div class="center">
             <div><img class="logo-site" src="https://i.ibb.co/d0F66Kw6/Whats-App-Image-2025-05-29-at-18-37-15-removebg-preview.png" alt="Logo"></div>
             <div class="titulo-site">Fórum Rita Matos Luna</div>
-            <div><img class="logo-site" src="https://i.ibb.co/d0F66Kw6/Whats-App-Image-2025-05-29-at-18-37-15-removebg-preview.png" alt="Logo"></div>
+            <div><img class="logo-site" src="https://i.ibb.co/SD2TKbT4/image-rita.png" alt="Logo"></div>
         </div> 
     </header>
+
     <div class="caixa" id="boas-vindas" style="margin-bottom:30px;">
         <div class="center-column" style="background:#fff;color:#4B7F4B;padding:30px 20px;border-radius:20px;box-shadow:2px 4px 12px #4B7F4B;margin-bottom:20px;">
             <h1 style="font-size:2.2em;margin-bottom:10px;">Bem-vindo ao Fórum Rita Matos Luna!</h1>
@@ -138,6 +139,7 @@ $publicos_foruns = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <?php endif; ?>
         </div>
     </div>
+
     <div class="caixa" id="lista-foruns">
         <p class="titulo-pagina center">Fóruns</p>
         <?php if (isset($_SESSION['user'])): ?>
@@ -152,9 +154,9 @@ $publicos_foruns = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </form>
         </div>
         <?php endif; ?>
-        <h2 style="margin-top:2em;color:#327f32;">Fóruns</h2>
+        <h1 style="margin-top:40px;color:#327f32;font-size:24px;">Fóruns Cadastrados</h1>
         <?php if (count($publicos_foruns) === 0): ?>
-            <p>Nenhum Fórum cadastrado.</p>
+            <p class="mensagem-erro">Nenhum Fórum cadastrado.</p>
         <?php else: ?>
             <?php foreach ($publicos_foruns as $forum): ?>
                 <div class="subforum">
@@ -165,9 +167,9 @@ $publicos_foruns = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <?php if ($is_admin): ?>
                             <form method="post" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja excluir este fórum?');">
                                 <input type="hidden" name="forum_id" value="<?= $forum['id'] ?>">
-                                <button type="submit" name="delete_forum" class="botao-vermelho">Excluir</button>
+                                <button style="margin-left:10px;" type="submit" name="delete_forum" class="botao-vermelho">Excluir</button>
                             </form>
-                            <button onclick="toggleEditForumPub(<?= $forum['id'] ?>)" class="botao-verde">Editar</button>
+                            <button style="margin-left:10px;" onclick="toggleEditForumPub(<?= $forum['id'] ?>)" class="botao-verde">Editar</button>
                         <?php endif; ?>
                     </div>
                     <div class="sf-descricao">
@@ -178,8 +180,10 @@ $publicos_foruns = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <input type="hidden" name="forum_id" value="<?= $forum['id'] ?>">
                         <input class="formulario-nome" type="text" name="forum_name" value="<?= htmlspecialchars($forum['name']) ?>" required><br>
                         <textarea class="formulario-descricao" name="forum_description" required><?= htmlspecialchars($forum['description']) ?></textarea><br>
-                        <button class="botao-verde" type="submit" name="edit_forum">Salvar</button>
-                        <button type="button" onclick="toggleEditForumPub(<?= $forum['id'] ?>)">Cancelar</button>
+                        <div class="center" style="margin-bottom:20px;">
+                        <button style="margin-right:10px;" class="botao-verde" type="submit" name="edit_forum">Salvar</button>
+                        <button class="botao-verde" type="button" onclick="toggleEditForumPub(<?= $forum['id'] ?>)">Cancelar</button>
+                        </div>
                     </form>
                     <?php endif; ?>
                 </div>
