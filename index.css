@@ -307,12 +307,12 @@ nav {
     box-shadow: 6px 8px 10px #101010;
 }
 .ban-link{
-    color: #400000;
+    color: #e04040;
     margin: 20px 0px;
     text-decoration: underline;
 }
 .ban-footer{
-    background: linear-gradient(to bottom,#202020,#200000);
+    background: linear-gradient(to bottom,#202020,#601010);
     height: 250px;
     margin-top: auto;
     display: flex;

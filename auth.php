@@ -21,12 +21,13 @@ try {
     if (isset($settings['redirect_time'])) $redirect_time = $settings['redirect_time'];
 } catch (Exception $e) {}
 if ($redirect_url) {
+
     // Checa tempo de expiração (10 segundos)
     if ($redirect_time && (time() - $redirect_time > 10)) {
         $conexao->exec("DELETE FROM settings WHERE chave IN ('redirect_global','redirect_admin','redirect_time')");
     } else {
         // Exibe aviso antes de redirecionar para todos, inclusive admins
-        echo '<div id="aviso-redirect" style="position:fixed;top:0;left:0;width:100%;background:#b77acc;color:#fff;padding:18px 0;text-align:center;font-size:1.2em;z-index:9999;">Você será redirecionado para <b>'.htmlspecialchars($redirect_url).'</b> em 3 segundos...</div>';
+        echo '<div id="aviso-redirect" style="position:fixed;top:0;left:0;width:100%;background:#4B7F4B;color:#fff;padding:18px 0;text-align:center;font-size:1.2em;z-index:9999;">Você será redirecionado para <b>'.htmlspecialchars($redirect_url).'</b> em 3 segundos...</div>';
         echo '<script>setTimeout(function(){window.location.href="'.addslashes($redirect_url).'";},3000);</script>';
         exit;
     }

@@ -215,9 +215,7 @@ if ($posts) {
         <?php if (isset($_GET['success'])) echo '<div style="color:green">'.htmlspecialchars($_GET['success']).'</div>'; ?>
         <?php if (isset($error)) echo '<div style="color:red">'.htmlspecialchars($error).'</div>'; ?>
         <?php if ($user_id): ?>
-        <?php if ($forum['is_principal'] && !$is_admin): ?>
-            <div class="caixa-form center-column" style="background:#ffe0e0;color:#b32d1a;">Você não é um administrador :(</div>
-        <?php else: ?>
+       
         <div class="caixa-form center-column">
             <h1>Criar novo post</h1>
             <hr>
@@ -227,7 +225,7 @@ if ($posts) {
                 <button class="botao-verde" type="submit" name="create_post">Publicar</button>
             </form>
         </div>
-        <?php endif; ?>
+      
         <?php endif; ?>
         <?php if (count($posts) === 0): ?>
                     <p class="mensagem-erro">Nenhum Post Ainda</p>
@@ -242,9 +240,11 @@ if ($posts) {
                         <?php if ($user_id && ($is_admin || $post['user_id'] == $user_id)): ?>
                             <form method="post" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja excluir este post?');">
                                 <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
-                                <button type="submit" name="delete_post" class="botao-vermelho">Excluir</button>
+
+                                <button style="margin-left:10px;" type="submit" name="delete_post" class="botao-vermelho">Excluir</button>
                             </form>
-                            <button onclick="toggleEditPost(<?= $post['id'] ?>)" class="botao-verde">Editar</button>
+                            <button style="margin-left:10px;" onclick="toggleEditPost(<?= $post['id'] ?>)" class="botao-verde">Editar</button>
+
                         <?php endif; ?>
                     </div>
                     <div class="forum-conteudo">
@@ -256,8 +256,11 @@ if ($posts) {
                             <input type="hidden" name="post_id" value="<?= $post['id'] ?>">
                             <input class="formulario-nome" type="text" name="title" value="<?= htmlspecialchars($post['title']) ?>" required><br>
                             <textarea class="formulario-descricao" name="content" required><?= htmlspecialchars($post['content']) ?></textarea><br>
+
+                            <div class="center" style="margin-bottom:20px; ">
                             <button class="botao-verde" type="submit" name="edit_post">Salvar</button>
-                            <button class="botao-verde" type="button" onclick="toggleEditPost(<?= $post['id'] ?>)">Cancelar</button>
+                            <button style="margin-left:10px" class="botao-verde" type="button" onclick="toggleEditPost(<?= $post['id'] ?>)">Cancelar</button>
+                            </div>
                         </form>
                         <?php endif; ?>
                         <div>
@@ -267,7 +270,7 @@ if ($posts) {
                                     <div class="comentario">
                                         <span><?= htmlspecialchars($comment['username']) ?></span>:
                                         <span><?= nl2br(htmlspecialchars($comment['content'])) ?></span>
-                                        <br><br>
+                                        <br><br> 
                                         <div class="center">
                                             <span><?= date('d/m/Y H:i', strtotime($comment['created_at'])) ?> | </span>
                                             <?php if ($user_id && $comment['user_id'] == $user_id): ?>
@@ -279,7 +282,7 @@ if ($posts) {
                                                 <input type="hidden" name="comment_id" value="<?= $comment['id'] ?>">
                                                 <textarea class="forum-formulario-descricao" name="content" required><?= htmlspecialchars($comment['content']) ?></textarea>
                                                 <button class="botao-verde" type="submit" name="edit_comment">Salvar</button>
-                                                <a href="forum.php?id=<?= $forum_id ?>">Cancelar</a>
+                                                <button class="botao-vermelho" type="button" onclick="window.location.href='forum.php?id=<?= $forum_id ?>'">Cancelar</button>
                                             </form>
                                         <?php endif; ?>
                                     </div>
