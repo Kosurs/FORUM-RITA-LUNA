@@ -112,7 +112,7 @@ $publicos_foruns = $stmt->fetchAll(PDO::FETCH_ASSOC);
             <?php if (isset($_SESSION['user'])): ?>
                 <div style="display:flex;align-items:center;gap:10px;">
                     <h1 style="margin:0;"><?= htmlspecialchars($_SESSION['user']) ?></h1>
-                    <form method="post" action="auth.php" style="display:inline;">
+                    <form method="post" action="auth_delete_account.php" style="display:inline;">
                         <button type="submit" name="delete_account" class="botao-vermelho" style="font-size:13px;padding:5px 12px;" onclick="return confirm('Tem certeza que deseja excluir sua conta? Esta ação é irreversível.');">Excluir conta</button>
                     </form>
                 </div>

@@ -1,4 +1,5 @@
 <?php
+session_start();
 require 'db.php';
 // Proteção global: se usuário logado estiver banido, redireciona para banido.php
 if (isset($_SESSION['user'])) {
@@ -11,7 +12,6 @@ if (isset($_SESSION['user'])) {
         exit;
     }
 }
-include 'auth.php';
 if (!isset($_SESSION['user'])) {
     header('Location: login.php');
     exit;
@@ -107,9 +107,6 @@ if (isset($settings['redirect_global'])) $redirect_global = $settings['redirect_
                 <?php endif; ?>
                 <div class="admin-redirecionar-botoes">
                     <button class="botao-verde" type="submit" name="set_redirect">Ativar Redirecionamento</button>
-                    <?php if ($redirect_global): ?>
-                        <button class="botao-vermelho" type="submit" name="remove_redirect">Remover Redirecionamento</button>
-                    <?php endif; ?>
                 </div>
             </form>
             <h1>Banir/Desbanir Usuários</h1>

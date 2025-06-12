@@ -1,8 +1,8 @@
 <?php
-// db.php: Conexão com MySQL e o codigo para fazer contato com o banco de dados
+// db.php: Conexão com MySQL/MariaDB
 $host = "127.0.0.1";
 $porta = "3306";
-$banco = "forum1";
+$banco = "saulo2";
 $usuario = "root";
 $senha = "";
 

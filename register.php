@@ -1,41 +1,6 @@
 <?php
-session_start();
-require 'db.php';
-// Proteção global: se usuário logado estiver banido, redireciona para banido.php
-if (isset($_SESSION['user'])) {
-    $stmt = $conexao->prepare('SELECT is_banned FROM users WHERE username = ?');
-    $stmt->execute([$_SESSION['user']]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    if ($user && $user['is_banned']) {
-        session_destroy();
-        header('Location: banido.php');
-        exit;
-    }
-}
-
-if (isset($_SESSION['user'])) {
-    header('Location: index.php');
-    exit;
-}
-
-if (isset($_POST['register'])) {
-    $username = trim($_POST['username']);
-    $password = $_POST['password'];
-    if ($username && $password) {
-        $hash = password_hash($password, PASSWORD_DEFAULT);
-        try {
-            $stmt = $conexao->prepare('INSERT INTO users (username, password) VALUES (?, ?)');
-            $stmt->execute([$username, $hash]);
-            $_SESSION['user'] = $username;
-            header('Location: index.php');
-            exit;
-        } catch (PDOException $e) {
-            $error = 'Usuário já existe!';
-        }
-    } else {
-        $error = 'Preencha todos os campos!';
-    }
-}
+require_once 'auth_bancheck.php';
+require_once 'auth_register.php';
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">

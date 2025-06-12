@@ -1,44 +1,6 @@
 <?php
-session_start();
-require 'db.php';
-// Proteção global: se usuário logado estiver banido, redireciona para banido.php
-if (isset($_SESSION['user'])) {
-    $stmt = $conexao->prepare('SELECT is_banned FROM users WHERE username = ?');
-    $stmt->execute([$_SESSION['user']]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    if ($user && $user['is_banned']) {
-        session_destroy();
-        header('Location: banido.php');
-        exit;
-    }
-}
-
-if (isset($_SESSION['user'])) {
-    header('Location: index.php');
-    exit;
-}
-
-if (isset($_POST['login'])) {
-    $username = trim($_POST['username']);
-    $password = $_POST['password'];
-    $admin_code = isset($_POST['admin_code']) ? trim($_POST['admin_code']) : '';
-    $stmt = $conexao->prepare('SELECT * FROM users WHERE username = ?');
-    $stmt->execute([$username]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-    if ($user && password_verify($password, $user['password'])) {
-        // Se código admin correto, atualiza permissão
-        if ($admin_code === '1212' && !$user['is_admin']) {
-            $stmt2 = $conexao->prepare('UPDATE users SET is_admin = 1 WHERE id = ?');
-            $stmt2->execute([$user['id']]);
-            $user['is_admin'] = 1;
-        }
-        $_SESSION['user'] = $username;
-        header('Location: index.php');
-        exit;
-    } else {
-        $error = 'Usuário ou senha inválidos!';
-    }
-}
+require_once 'auth_bancheck.php';
+require_once 'auth_login.php';
 ?>
 <!DOCTYPE html>
 <html lang="pt-br">

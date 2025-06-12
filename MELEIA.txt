@@ -1,10 +1,10 @@
 ola paulo, esse forum foi feito por saulo, samuel oliveira e samuel cavalcante,
 
 
-o nome da database e "forum1" e ela esta em db.php
+o nome da database e saulo2 e ela esta em db.php
 
 
-os codigos de [login, logout, deletar conta e outros] estao em auth.php  
+os codigos de [login, logout, deletar conta e outros] estao em auth_login.php, auth_logout.php, auth_register.php, auth_bancheck.php  
 
 
 se quiser acessar o painel de administrador faça; saia da conta, coloque o codigo administrativo que sera "1212" na tela de login e o painel aparecera em cima
